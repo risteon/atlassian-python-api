@@ -11,7 +11,8 @@ class AtlassianRestAPI:
 
     default_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-    def __init__(self, url, username, password, timeout=60, api_root='rest/api', api_version='latest', verify_ssl=True):
+    def __init__(self, url, username, password, timeout=60, api_root='rest/api', api_version='latest', verify_ssl=True,
+                 cert=None):
         self.url = url
         self.username = username
         self.password = password
@@ -19,6 +20,7 @@ class AtlassianRestAPI:
         self.verify_ssl = verify_ssl
         self.api_root = api_root
         self.api_version = api_version
+        self.cert_ = cert
         self._session = requests.Session()
         if username and password:
             self._session.auth = (username, password)
@@ -55,7 +57,8 @@ class AtlassianRestAPI:
             data=json.dumps(data),
             auth=(self.username, self.password),
             timeout=self.timeout,
-            verify=self.verify_ssl
+            verify=self.verify_ssl,
+            cert=self.cert_
         )
         if response.status_code == 200:
             log.debug('Received: {0}'.format(response.json()))
