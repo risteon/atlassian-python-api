@@ -59,7 +59,7 @@ class Confluence(AtlassianRestAPI):
             log.info('Content of {page_id} differs'.format(page_id=page_id))
             return False
 
-    def update_page(self, parent_id, page_id, title, body, type='page'):
+    def update_page_if_changed(self, parent_id, page_id, body, title=None, type='page'):
         log.info('Updating {type} "{title}"'.format(title=title, type=type))
 
         if self.is_page_content_is_already_updated(page_id, body):
@@ -70,17 +70,41 @@ class Confluence(AtlassianRestAPI):
             data = {
                 'id': page_id,
                 'type': type,
-                'title': title,
                 'body': {'storage': {
                     'value': body,
                     'representation': 'storage'}},
                 'version': {'number': version}
             }
+            
+            if title is not None:
+                data['title'] = title
 
             if parent_id:
                 data['ancestors'] = [{'type': 'page', 'id': parent_id}]
 
             return self.put('{api}/content/{page_id}'.format(api=self.api_root, page_id=page_id), data=data)
+
+    def update_page(self, parent_id, page_id, body, title=None, type='page'):
+        log.info('Updating {type} "{title}"'.format(title=title, type=type))
+
+        version = self.history(page_id)['lastUpdated']['number'] + 1
+
+        data = {
+            'id': page_id,
+            'type': type,
+            'body': {'storage': {
+                'value': body,
+                'representation': 'storage'}},
+            'version': {'number': version}
+        }
+
+        if title is not None:
+            data['title'] = title
+
+        if parent_id:
+            data['ancestors'] = [{'type': 'page', 'id': parent_id}]
+
+        return self.put('{api}/content/{page_id}'.format(api=self.api_root, page_id=page_id), data=data)
 
     def update_or_create(self, parent_id, title, body):
         space = self.get_page_space(parent_id)
